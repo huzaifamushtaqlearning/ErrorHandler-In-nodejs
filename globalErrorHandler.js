@@ -42,3 +42,34 @@ export const globalErrorHandler = (error, req, res, next) => {
     .status(error.statusCode)
     .json(new ApiRes(error.statusCode, error.data, error.message));
 };
+//---------------best of the best ----------------------//
+
+
+import fs from "fs";
+
+import { ApiResponse,ApiError} from "./index.js";
+
+const globalErrorHandler = (err, req, res, next) => {
+  console.error("ERROR:", err);
+
+  if (req.file) {
+    fs.unlinkSync(req.file.path);
+  }
+
+   if (!(err instanceof ApiError)) {
+    res
+      .status(500)
+      .json(
+        new ApiRes(
+          500,
+          null,
+          err._message ?? err.message ?? "Internal Server Error"
+        )
+      );
+  }
+   res
+    .status(err.statusCode)
+    .json(new ApiResponse(err.statusCode, err.data, err.message));
+};
+
+export { globalErrorHandler };
