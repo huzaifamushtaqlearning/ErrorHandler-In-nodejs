@@ -67,3 +67,58 @@ export function globalErrorHandler(err, req, res,next) {
 
 export { globalErrorHandler };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import fs from "fs";
+
+import { ApiResponse,ApiError} from "./index.js";
+
+const globalErrorHandler = (err, req, res, next) => {
+  console.error("🔥 ERROR:", err);
+
+  // ✅ Step 1: Agar koi uploaded file hai to hata do (rollback)
+  if (req.file) {
+    fs.unlinkSync(req.file.path);
+  }
+
+  // ✅ Step 2: Agar error custom ApiError ka instance nahi hai
+  let error;
+  if (err instanceof ApiError) {
+    error = err;
+  } else {
+    error = new ApiError(
+      500,
+      err._message ?? err.message ?? "Internal Server Error"
+    );
+  }
+
+  // ✅ Step 3: Response message set karo (production vs dev)
+  const message =
+    process.env.NODE_ENV === "production"
+      ? error.statusCode === 500
+        ? "Internal Server Error"
+        : error._message ?? error.message
+      : error._message ?? error.message;
+
+  // ✅ Step 4: Final response bhejna
+  return res
+    .status(error.statusCode)
+    .json(new ApiResponse(error.statusCode, error.data ?? null, message));
+}
+
+export { globalErrorHandler };
+
